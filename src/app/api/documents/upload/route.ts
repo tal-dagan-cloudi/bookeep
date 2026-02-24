@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
-import { eq } from "drizzle-orm"
+import { and, eq, gte, sql } from "drizzle-orm"
 
+import { getAuthContext } from "@/lib/api-auth"
+import { checkPlanLimits } from "@/lib/billing"
+import { rateLimitByUser } from "@/lib/rate-limit"
 import { generateThumbnail, saveFile } from "@/lib/storage"
 import { db } from "@/server/db"
-import { documents, orgMembers, users } from "@/server/db/schema"
+import { documents } from "@/server/db/schema"
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
 const ALLOWED_TYPES = [
@@ -16,29 +18,48 @@ const ALLOWED_TYPES = [
 ]
 
 export async function POST(req: Request) {
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const authResult = await getAuthContext()
+  if (!authResult.success) return authResult.response
+
+  const { dbUserId, orgId } = authResult.context
+
+  // Rate limit: 30 uploads per minute
+  const rl = await rateLimitByUser(dbUserId, "upload", 30, 60)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many uploads. Please wait a moment." },
+      { status: 429 }
+    )
   }
 
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, userId))
-    .limit(1)
+  // Check plan limits
+  const startOfMonth = new Date()
+  startOfMonth.setDate(1)
+  startOfMonth.setHours(0, 0, 0, 0)
 
-  if (user.length === 0) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 })
+  const [docCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(documents)
+    .where(
+      and(eq(documents.orgId, orgId), gte(documents.createdAt, startOfMonth))
+    )
+
+  const planCheck = await checkPlanLimits(
+    orgId,
+    "documents",
+    Number(docCount.count)
+  )
+
+  if (!planCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: "Document limit reached for your plan",
+        limit: planCheck.limit,
+        used: planCheck.used,
+      },
+      { status: 403 }
+    )
   }
-
-  // Get user's org (first one for now)
-  const membership = await db
-    .select()
-    .from(orgMembers)
-    .where(eq(orgMembers.userId, user[0].id))
-    .limit(1)
-
-  const orgId = membership.length > 0 ? membership[0].orgId : user[0].id
 
   const formData = await req.formData()
   const files = formData.getAll("files") as File[]
@@ -91,7 +112,7 @@ export async function POST(req: Request) {
       .insert(documents)
       .values({
         orgId,
-        uploadedByUserId: user[0].id,
+        uploadedByUserId: dbUserId,
         source: "upload",
         status: "pending",
         fileUrl: filePath,

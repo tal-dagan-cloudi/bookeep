@@ -1,29 +1,43 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 
+import { getAuthContext } from "@/lib/api-auth"
+import { checkPlanLimits } from "@/lib/billing"
 import { getGmailAuthUrl } from "@/lib/gmail"
 import { db } from "@/server/db"
-import { users } from "@/server/db/schema"
+import { emailAccounts } from "@/server/db/schema"
 
 export async function GET() {
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const authResult = await getAuthContext()
+  if (!authResult.success) return authResult.response
 
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, userId))
-    .limit(1)
+  const { dbUserId, orgId } = authResult.context
 
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 })
+  // Check plan limits for email inboxes
+  const [emailCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(emailAccounts)
+    .where(eq(emailAccounts.orgId, orgId))
+
+  const planCheck = await checkPlanLimits(
+    orgId,
+    "emailInboxes",
+    Number(emailCount.count)
+  )
+
+  if (!planCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: "Email inbox limit reached for your plan",
+        limit: planCheck.limit,
+        used: planCheck.used,
+      },
+      { status: 403 }
+    )
   }
 
   const state = Buffer.from(
-    JSON.stringify({ userId: user.id })
+    JSON.stringify({ userId: dbUserId })
   ).toString("base64url")
 
   const authUrl = getGmailAuthUrl(state)
