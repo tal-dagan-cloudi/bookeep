@@ -10,16 +10,16 @@ const isProtectedRoute = createRouteMatcher([
   "/:locale/settings(.*)",
 ])
 
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/:locale",
-  "/:locale/auth(.*)",
-  "/api/webhooks(.*)",
-])
+const isApiRoute = createRouteMatcher(["/api(.*)"])
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
     await auth.protect()
+  }
+
+  // Skip intl middleware for API routes — Clerk still runs on them
+  if (isApiRoute(req)) {
+    return
   }
 
   return intlMiddleware(req)
@@ -27,7 +27,7 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next|api|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(en|he)/:path*",
   ],
 }

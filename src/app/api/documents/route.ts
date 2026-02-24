@@ -1,39 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
-import { and, desc, eq, ilike, sql } from "drizzle-orm"
+import { and, desc, eq, sql } from "drizzle-orm"
 
+import { getAuthContext } from "@/lib/api-auth"
 import { db } from "@/server/db"
 import {
-  documentCategorization,
   documents,
   extractedData,
-  orgMembers,
-  users,
 } from "@/server/db/schema"
 
 export async function GET(req: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const authResult = await getAuthContext()
+  if (!authResult.success) return authResult.response
 
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, userId))
-    .limit(1)
-
-  if (user.length === 0) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 })
-  }
-
-  const membership = await db
-    .select()
-    .from(orgMembers)
-    .where(eq(orgMembers.userId, user[0].id))
-    .limit(1)
-
-  const orgId = membership.length > 0 ? membership[0].orgId : user[0].id
+  const { orgId } = authResult.context
 
   const searchParams = req.nextUrl.searchParams
   const status = searchParams.get("status")
