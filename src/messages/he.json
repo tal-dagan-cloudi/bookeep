@@ -107,5 +107,20 @@
       "exported": "יוצא",
       "trash": "פח"
     }
+  },
+  "integrations": {
+    "title": "אינטגרציות",
+    "emailAccounts": "חשבונות דוא\"ל",
+    "emailDescription": "חברו את חשבונות הדוא\"ל שלכם כדי לסרוק ולאסוף קבלות וחשבוניות אוטומטית.",
+    "connectGmail": "חבר Gmail",
+    "connectOutlook": "חבר Outlook",
+    "comingSoon": "בקרוב",
+    "noAccounts": "אין חשבונות דוא\"ל מחוברים עדיין.",
+    "gmailConnected": "Gmail חובר בהצלחה! אנחנו סורקים את תיבת הדואר שלכם לקבלות.",
+    "connectionError": "חיבור חשבון הדוא\"ל נכשל. נסו שוב.",
+    "confirmDisconnect": "האם אתם בטוחים שברצונכם לנתק חשבון זה?",
+    "lastSync": "סנכרון אחרון",
+    "syncNow": "סנכרן עכשיו",
+    "disconnect": "נתק"
   }
 }

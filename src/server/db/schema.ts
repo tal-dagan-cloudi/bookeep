@@ -157,6 +157,7 @@ export const documents = pgTable("documents", {
   sourceEmailAccountId: uuid("source_email_account_id").references(
     () => emailAccounts.id
   ),
+  sourceRef: varchar("source_ref", { length: 500 }).unique(),
   sourceMetadata: jsonb("source_metadata"),
   status: documentStatus("status").default("pending").notNull(),
   fileUrl: text("file_url").notNull(),

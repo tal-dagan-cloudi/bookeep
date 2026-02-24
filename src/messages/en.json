@@ -107,5 +107,20 @@
       "exported": "Exported",
       "trash": "Trash"
     }
+  },
+  "integrations": {
+    "title": "Integrations",
+    "emailAccounts": "Email Accounts",
+    "emailDescription": "Connect your email accounts to automatically scan and collect receipts and invoices.",
+    "connectGmail": "Connect Gmail",
+    "connectOutlook": "Connect Outlook",
+    "comingSoon": "Soon",
+    "noAccounts": "No email accounts connected yet.",
+    "gmailConnected": "Gmail connected successfully! We're scanning your inbox for receipts.",
+    "connectionError": "Failed to connect email account. Please try again.",
+    "confirmDisconnect": "Are you sure you want to disconnect this account?",
+    "lastSync": "Last sync",
+    "syncNow": "Sync Now",
+    "disconnect": "Disconnect"
   }
 }
