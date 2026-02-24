@@ -65,7 +65,6 @@ export async function getAuthContext(): Promise<
     if (created) {
       user = created
     } else {
-      // Race condition: another request created it
       const [existing] = await db
         .select()
         .from(users)
@@ -84,13 +83,50 @@ export async function getAuthContext(): Promise<
     }
   }
 
+  // Find org membership
   const [membership] = await db
     .select()
     .from(orgMembers)
     .where(eq(orgMembers.userId, user.id))
     .limit(1)
 
-  const orgId = membership ? membership.orgId : user.id
+  let orgId: string
+
+  if (membership) {
+    orgId = membership.orgId
+  } else {
+    // Check if a personal org already exists for this user
+    const [existingOrg] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.ownerId, user.id))
+      .limit(1)
+
+    if (existingOrg) {
+      orgId = existingOrg.id
+    } else {
+      // Auto-create a personal organization
+      const [newOrg] = await db
+        .insert(organizations)
+        .values({
+          name: user.name || user.email || "My Organization",
+          slug: `personal-${user.id.slice(0, 8)}`,
+          ownerId: user.id,
+          plan: "free",
+        })
+        .returning()
+
+      orgId = newOrg.id
+
+      // Add user as admin member
+      await db.insert(orgMembers).values({
+        orgId: newOrg.id,
+        userId: user.id,
+        role: "admin",
+        joinedAt: new Date(),
+      })
+    }
+  }
 
   const [org] = await db
     .select()
