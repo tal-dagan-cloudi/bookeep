@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
-import { eq } from "drizzle-orm"
 
+import { getAuthContext } from "@/lib/api-auth"
 import { exchangeGmailCode } from "@/lib/gmail"
 import { encrypt } from "@/lib/encryption"
 import { scheduleEmailScan } from "@/lib/queue"
 import { db } from "@/server/db"
-import { emailAccounts, orgMembers, users } from "@/server/db/schema"
+import { emailAccounts } from "@/server/db/schema"
 
 export async function GET(req: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) {
+  const authResult = await getAuthContext()
+  if (!authResult.success) {
     return NextResponse.redirect(
       new URL("/auth/sign-in", req.nextUrl.origin)
     )
   }
 
+  const { dbUserId, orgId } = authResult.context
+
   const code = req.nextUrl.searchParams.get("code")
-  const stateParam = req.nextUrl.searchParams.get("state")
   const error = req.nextUrl.searchParams.get("error")
 
   if (error) {
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  if (!code || !stateParam) {
+  if (!code) {
     return NextResponse.redirect(
       new URL(
         "/dashboard/integrations?error=missing_params",
@@ -39,35 +39,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const state = JSON.parse(
-      Buffer.from(stateParam, "base64url").toString()
-    ) as { userId: string }
-
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.clerkId, userId))
-      .limit(1)
-
-    if (!user || user.id !== state.userId) {
-      return NextResponse.redirect(
-        new URL(
-          "/dashboard/integrations?error=invalid_state",
-          req.nextUrl.origin
-        )
-      )
-    }
-
     const tokens = await exchangeGmailCode(code)
-
-    // Get user's org
-    const [membership] = await db
-      .select()
-      .from(orgMembers)
-      .where(eq(orgMembers.userId, user.id))
-      .limit(1)
-
-    const orgId = membership ? membership.orgId : user.id
 
     // Get Gmail email address from tokens
     const { google } = await import("googleapis")
@@ -82,7 +54,7 @@ export async function GET(req: NextRequest) {
       .insert(emailAccounts)
       .values({
         orgId,
-        userId: user.id,
+        userId: dbUserId,
         provider: "gmail",
         emailAddress,
         oauthTokenEncrypted: encrypt(tokens.access_token!),
