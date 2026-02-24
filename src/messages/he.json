@@ -95,6 +95,10 @@
     "supportedFormats": "תומך ב-PDF, JPG, PNG, HEIC",
     "gallery": "גלריה",
     "table": "טבלה",
+    "searchPlaceholder": "חיפוש לפי שם ספק...",
+    "allStatuses": "הכל",
+    "noDocuments": "אין מסמכים עדיין",
+    "uploadFirst": "העלו את הקבלה הראשונה שלכם או חברו דוא\"ל כדי להתחיל.",
     "status": {
       "pending": "ממתין",
       "processing": "מעבד",

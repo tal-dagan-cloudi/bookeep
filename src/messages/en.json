@@ -95,6 +95,10 @@
     "supportedFormats": "Supports PDF, JPG, PNG, HEIC",
     "gallery": "Gallery",
     "table": "Table",
+    "searchPlaceholder": "Search by vendor name...",
+    "allStatuses": "All",
+    "noDocuments": "No documents yet",
+    "uploadFirst": "Upload your first receipt or connect an email to get started.",
     "status": {
       "pending": "Pending",
       "processing": "Processing",

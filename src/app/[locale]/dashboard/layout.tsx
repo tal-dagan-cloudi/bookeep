@@ -21,11 +21,11 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: t("dashboard") },
-    { href: "/dashboard", icon: FileText, label: t("documents") },
-    { href: "/dashboard", icon: FolderOpen, label: t("categories") },
-    { href: "/dashboard", icon: Plug, label: t("integrations") },
-    { href: "/settings", icon: Settings, label: t("settings") },
-    { href: "/dashboard", icon: CreditCard, label: t("billing") },
+    { href: "/dashboard/documents", icon: FileText, label: t("documents") },
+    { href: "/dashboard/categories", icon: FolderOpen, label: t("categories") },
+    { href: "/dashboard/integrations", icon: Plug, label: t("integrations") },
+    { href: "/dashboard/settings", icon: Settings, label: t("settings") },
+    { href: "/dashboard/billing", icon: CreditCard, label: t("billing") },
   ]
 
   return (
