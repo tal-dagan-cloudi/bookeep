@@ -1,5 +1,5 @@
 import { createWorker } from "tesseract.js"
-import { readFile, writeFile } from "fs/promises"
+import { readFile, unlink } from "fs/promises"
 import path from "path"
 import sharp from "sharp"
 import os from "os"
@@ -56,19 +56,33 @@ JSON structure:
 }
 
 CRITICAL RULES for totalAmount:
-- totalAmount is the FINAL TOTAL the customer paid — the LARGEST total on the receipt
-- In Hebrew receipts, look for: סה"כ לתשלום, סה"כ, סכום כולל, סך הכל — these indicate the final total
-- The total is usually the last and largest number, often near the bottom of the receipt
-- Do NOT confuse subtotals, tax amounts, or individual item prices with the total
-- If you see "סה"כ כולל מע"מ" or "סה"כ לתשלום" followed by a number, THAT is the totalAmount
+- totalAmount is the number that appears NEXT TO a total indicator keyword — NOT the largest number on the receipt
+- OCR often misreads numbers (e.g. "20.0" becomes "200", "59.0" becomes "590") — be aware of this
+- Hebrew total indicators (HIGHEST PRIORITY): סה"כ, סה''כ, סה"ע, סה''ע, סך הכל, סה"כ לתשלום, סה"כ כולל מע"מ, סכום כולל
+- The number IMMEDIATELY after/near these Hebrew keywords IS the totalAmount
+- If you see סה"כ or סה"ע followed by a number like 79.0, the totalAmount is 79.0 — even if larger numbers appear elsewhere
+- DO NOT pick the largest number — OCR errors can create artificially large numbers
+- Verify: totalAmount should equal the sum of all line item totals (approximately)
 - If currency symbol ₪ or the word "ש"ח" appears, currency is "ILS"
+
+RULES for line items:
+- Look for item names followed by quantities and prices
+- Common OCR errors: decimal points disappear (20.0 → 200), digits merge
+- If an item price seems 10x too high compared to a reasonable restaurant/store price, it's likely an OCR error — divide by 10
+- Cross-check: sum of line items should approximately match the total near סה"כ/סה"ע
+
+RULES for tax (VAT / מע"מ):
+- Look for מע"מ or VAT followed by a number or percentage
+- Israeli VAT is typically 17% or 18% — use this to sanity-check
+- totalTax is the tax AMOUNT, not the percentage
 
 General rules:
 - Extract ALL line items visible in the text
 - Dates in YYYY-MM-DD format
 - If a field is unclear, use null
 - For Hebrew documents, keep vendor names in Hebrew
-- Common Hebrew terms: סה"כ (total), מע"מ (VAT), חשבונית (invoice), קבלה (receipt), פריט (item)`
+- Common Hebrew terms: סה"כ (total), מע"מ (VAT), חשבונית (invoice), קבלה (receipt), פריט (item)
+- OCR text may have garbled Hebrew — focus on recognizable patterns and numbers near keywords`
 
 async function preprocessImage(filePath: string): Promise<string> {
   const tmpDir = os.tmpdir()
@@ -110,8 +124,6 @@ async function ocrImage(filePath: string): Promise<string> {
     return text
   } finally {
     if (processedPath) {
-      await writeFile(processedPath, "").catch(() => {})
-      const { unlink } = await import("fs/promises")
       await unlink(processedPath).catch(() => {})
     }
   }
@@ -163,74 +175,7 @@ function parseMiniMaxResponse(content: string): Omit<ExtractionResult, "rawOcrTe
   return JSON.parse(jsonMatch[0]) as Omit<ExtractionResult, "rawOcrText">
 }
 
-async function callMiniMaxVision(
-  filePath: string,
-  ocrText: string
-): Promise<ExtractionResult> {
-  const apiKey = process.env.MINIMAX_API_KEY
-  if (!apiKey) {
-    throw new Error("MINIMAX_API_KEY not configured")
-  }
-
-  const imageBuffer = await readFile(filePath)
-  const base64Image = imageBuffer.toString("base64")
-  const ext = path.extname(filePath).toLowerCase().replace(".", "")
-  const mimeType =
-    ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg"
-
-  const response = await fetch(`${MINIMAX_BASE_URL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: MINIMAX_MODEL,
-      max_tokens: 4096,
-      temperature: 0,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a precise document data extractor. You only output valid JSON, nothing else.",
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:${mimeType};base64,${base64Image}`,
-              },
-            },
-            {
-              type: "text",
-              text: `${EXTRACTION_PROMPT}\n\nLook at this receipt/invoice image directly. Read ALL text carefully — especially numbers and Hebrew text. If OCR text is also provided below, use it as a secondary reference, but trust the image more.\n\n--- OCR TEXT (secondary reference) ---\n${ocrText}\n--- END ---`,
-            },
-          ],
-        },
-      ],
-    }),
-  })
-
-  if (!response.ok) {
-    const errorBody = await response.text()
-    throw new Error(
-      `MiniMax Vision API error (${response.status}): ${errorBody}`
-    )
-  }
-
-  const data = await response.json()
-  const content = data.choices?.[0]?.message?.content
-  if (!content) {
-    throw new Error("No content in MiniMax Vision response")
-  }
-
-  const parsed = parseMiniMaxResponse(content)
-  return { ...parsed, rawOcrText: ocrText }
-}
-
-async function callMiniMaxText(ocrText: string): Promise<ExtractionResult> {
+async function callMiniMax(ocrText: string): Promise<ExtractionResult> {
   const apiKey = process.env.MINIMAX_API_KEY
   if (!apiKey) {
     throw new Error("MINIMAX_API_KEY not configured")
@@ -277,30 +222,10 @@ async function callMiniMaxText(ocrText: string): Promise<ExtractionResult> {
   return { ...parsed, rawOcrText: ocrText }
 }
 
-const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "bmp", "tiff"])
-
 export async function extractDocument(
   fileRelativePath: string,
   fileType: string
 ): Promise<ExtractionResult> {
-  const fullPath = path.join(STORAGE_DIR, fileRelativePath)
-  const isImage = IMAGE_EXTENSIONS.has(fileType.toLowerCase())
-
-  // For images: use vision API (primary) with OCR as supplementary context
-  if (isImage) {
-    const ocrText = await ocrImage(fullPath)
-
-    try {
-      return await callMiniMaxVision(fullPath, ocrText)
-    } catch (err) {
-      console.error("Vision extraction failed, falling back to text-only:", err)
-      if (ocrText.trim().length > 0) {
-        return callMiniMaxText(ocrText)
-      }
-    }
-  }
-
-  // For PDFs: extract text first, then use text-only API
   const ocrText = await extractTextFromFile(fileRelativePath, fileType)
 
   if (ocrText.trim().length === 0) {
@@ -319,5 +244,5 @@ export async function extractDocument(
     }
   }
 
-  return callMiniMaxText(ocrText)
+  return callMiniMax(ocrText)
 }
