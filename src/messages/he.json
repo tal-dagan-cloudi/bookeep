@@ -126,6 +126,17 @@
     "default": "ברירת מחדל",
     "noEntities": "אין ישויות עסקיות עדיין. צרו אחת כדי לשייך מסמכים."
   },
+  "billing": {
+    "title": "חיוב",
+    "currentUsage": "שימוש נוכחי",
+    "documentsThisMonth": "מסמכים החודש",
+    "emailInboxes": "תיבות דוא\"ל",
+    "plans": "תוכניות",
+    "currentPlan": "תוכנית נוכחית",
+    "month": "חודש",
+    "upgrade": "שדרוג",
+    "downgrade": "שנמוך"
+  },
   "settings": {
     "title": "הגדרות",
     "accountingIntegrations": "אינטגרציות חשבונאיות",

@@ -126,6 +126,17 @@
     "default": "Default",
     "noEntities": "No business entities yet. Create one to assign documents."
   },
+  "billing": {
+    "title": "Billing",
+    "currentUsage": "Current Usage",
+    "documentsThisMonth": "Documents This Month",
+    "emailInboxes": "Email Inboxes",
+    "plans": "Plans",
+    "currentPlan": "Current Plan",
+    "month": "month",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade"
+  },
   "settings": {
     "title": "Settings",
     "accountingIntegrations": "Accounting Integrations",
