@@ -3,6 +3,7 @@ import { and, eq, gte, sql } from "drizzle-orm"
 
 import { getAuthContext } from "@/lib/api-auth"
 import { checkPlanLimits } from "@/lib/billing"
+import { scheduleDocumentProcess } from "@/lib/queue"
 import { rateLimitByUser } from "@/lib/rate-limit"
 import { generateThumbnail, saveFile } from "@/lib/storage"
 import { db } from "@/server/db"
@@ -121,6 +122,9 @@ export async function POST(req: Request) {
         thumbnailUrl,
       })
       .returning()
+
+    // Queue for AI extraction
+    await scheduleDocumentProcess(doc.id)
 
     results.push({
       id: doc.id,

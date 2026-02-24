@@ -11,7 +11,8 @@
     "db:generate": "NODE_OPTIONS='--import tsx' drizzle-kit generate",
     "db:migrate": "NODE_OPTIONS='--import tsx' drizzle-kit migrate",
     "db:push": "NODE_OPTIONS='--import tsx' drizzle-kit push",
-    "db:studio": "NODE_OPTIONS='--import tsx' drizzle-kit studio"
+    "db:studio": "NODE_OPTIONS='--import tsx' drizzle-kit studio",
+    "workers": "npx tsx --tsconfig tsconfig.json src/workers/run.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.38.2",
