@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { auth, currentUser } from "@clerk/nextjs/server"
 import { eq } from "drizzle-orm"
 
 import { db } from "@/server/db"
@@ -27,19 +27,60 @@ export async function getAuthContext(): Promise<
     }
   }
 
-  const [user] = await db
+  let [user] = await db
     .select()
     .from(users)
     .where(eq(users.clerkId, userId))
     .limit(1)
 
+  // Auto-provision user if authenticated via Clerk but missing from DB
   if (!user) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      ),
+    const clerkUser = await currentUser()
+    if (!clerkUser) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          { error: "User not found" },
+          { status: 404 }
+        ),
+      }
+    }
+
+    const email = clerkUser.emailAddresses[0]?.emailAddress ?? ""
+    const name = [clerkUser.firstName, clerkUser.lastName]
+      .filter(Boolean)
+      .join(" ")
+
+    const [created] = await db
+      .insert(users)
+      .values({
+        clerkId: userId,
+        email,
+        name: name || null,
+        avatarUrl: clerkUser.imageUrl || null,
+      })
+      .onConflictDoNothing()
+      .returning()
+
+    if (created) {
+      user = created
+    } else {
+      // Race condition: another request created it
+      const [existing] = await db
+        .select()
+        .from(users)
+        .where(eq(users.clerkId, userId))
+        .limit(1)
+      if (!existing) {
+        return {
+          success: false,
+          response: NextResponse.json(
+            { error: "User provisioning failed" },
+            { status: 500 }
+          ),
+        }
+      }
+      user = existing
     }
   }
 

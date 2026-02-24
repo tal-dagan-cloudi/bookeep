@@ -1,48 +1,17 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
 import { and, eq, gte, sql } from "drizzle-orm"
 
+import { getAuthContext } from "@/lib/api-auth"
 import { getPlan } from "@/lib/billing"
 import { db } from "@/server/db"
-import {
-  documents,
-  emailAccounts,
-  organizations,
-  orgMembers,
-  users,
-} from "@/server/db/schema"
+import { documents, emailAccounts } from "@/server/db/schema"
 
 export async function GET() {
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const authResult = await getAuthContext()
+  if (!authResult.success) return authResult.response
 
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, userId))
-    .limit(1)
-
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 })
-  }
-
-  const [membership] = await db
-    .select()
-    .from(orgMembers)
-    .where(eq(orgMembers.userId, user.id))
-    .limit(1)
-
-  const orgId = membership ? membership.orgId : user.id
-
-  const [org] = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.id, orgId))
-    .limit(1)
-
-  const plan = getPlan(org?.plan || "free")
+  const { orgId, plan: planId } = authResult.context
+  const plan = getPlan(planId)
 
   // Count documents this month
   const startOfMonth = new Date()
