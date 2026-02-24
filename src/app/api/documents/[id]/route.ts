@@ -1,41 +1,19 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
 import { and, eq } from "drizzle-orm"
 
+import { getAuthContext } from "@/lib/api-auth"
+import { scheduleDocumentProcess } from "@/lib/queue"
 import { db } from "@/server/db"
-import {
-  documents,
-  extractedData,
-  orgMembers,
-  users,
-} from "@/server/db/schema"
+import { documents, extractedData } from "@/server/db/schema"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
 export async function GET(req: Request, { params }: RouteParams) {
   const { id } = await params
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const authResult = await getAuthContext()
+  if (!authResult.success) return authResult.response
 
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, userId))
-    .limit(1)
-
-  if (user.length === 0) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 })
-  }
-
-  const membership = await db
-    .select()
-    .from(orgMembers)
-    .where(eq(orgMembers.userId, user[0].id))
-    .limit(1)
-
-  const orgId = membership.length > 0 ? membership[0].orgId : user[0].id
+  const { orgId } = authResult.context
 
   const doc = await db
     .select()
@@ -56,20 +34,8 @@ export async function GET(req: Request, { params }: RouteParams) {
 
 export async function PATCH(req: Request, { params }: RouteParams) {
   const { id } = await params
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, userId))
-    .limit(1)
-
-  if (user.length === 0) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 })
-  }
+  const authResult = await getAuthContext()
+  if (!authResult.success) return authResult.response
 
   const body = await req.json()
 
@@ -96,15 +62,22 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       .where(eq(documents.id, id))
   }
 
+  // Re-extract if requested
+  if (body.reextract) {
+    await db
+      .update(documents)
+      .set({ status: "pending", updatedAt: new Date() })
+      .where(eq(documents.id, id))
+    await scheduleDocumentProcess(id)
+  }
+
   return NextResponse.json({ success: true })
 }
 
 export async function DELETE(req: Request, { params }: RouteParams) {
   const { id } = await params
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const authResult = await getAuthContext()
+  if (!authResult.success) return authResult.response
 
   await db
     .update(documents)

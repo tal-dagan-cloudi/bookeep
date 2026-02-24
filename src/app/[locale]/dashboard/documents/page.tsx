@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
+import { useRouter } from "@/i18n/navigation"
 import { Grid3X3, List, Search } from "lucide-react"
 
 import { type DocumentItem } from "@/types/document"
@@ -47,10 +48,14 @@ export default function DocumentsPage() {
     fetchDocuments()
   }, [fetchDocuments])
 
-  const handleSelect = useCallback((doc: DocumentItem) => {
-    // TODO: Open document detail panel
-    console.info("Selected document:", doc.id)
-  }, [])
+  const router = useRouter()
+
+  const handleSelect = useCallback(
+    (doc: DocumentItem) => {
+      router.push(`/dashboard/documents/${doc.id}`)
+    },
+    [router]
+  )
 
   const statuses: StatusFilter[] = [
     "all",
