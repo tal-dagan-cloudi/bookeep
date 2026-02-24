@@ -35,9 +35,11 @@ export type ExtractionResult = {
   confidenceScore: number
 }
 
-const EXTRACTION_PROMPT = `You are an expert document data extractor. Analyze the following OCR text extracted from a receipt or invoice and extract structured data.
+const EXTRACTION_PROMPT = `You are an expert receipt and invoice data extractor. Analyze the following OCR text and extract structured data.
 
-Return ONLY valid JSON with this exact structure (no markdown, no explanation):
+IMPORTANT: Return ONLY a valid JSON object. No markdown, no explanation, no thinking.
+
+JSON structure:
 {
   "vendorName": "string or null",
   "vendorAddress": "string or null",
@@ -46,28 +48,25 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
   "documentNumber": "string or null",
   "totalAmount": number or null,
   "totalTax": number or null,
-  "currency": "USD|EUR|ILS|GBP|etc",
-  "lineItems": [
-    {
-      "description": "string",
-      "quantity": number,
-      "unitPrice": number,
-      "total": number,
-      "tax": number
-    }
-  ],
+  "currency": "ILS|USD|EUR|GBP",
+  "lineItems": [{"description": "string", "quantity": number, "unitPrice": number, "total": number, "tax": number}],
   "confidenceScore": 0.0 to 1.0
 }
 
-Rules:
-- Extract ALL line items if visible in the text
-- Use ISO currency codes
+CRITICAL RULES for totalAmount:
+- totalAmount is the FINAL TOTAL the customer paid — the LARGEST total on the receipt
+- In Hebrew receipts, look for: סה"כ לתשלום, סה"כ, סכום כולל, סך הכל — these indicate the final total
+- The total is usually the last and largest number, often near the bottom of the receipt
+- Do NOT confuse subtotals, tax amounts, or individual item prices with the total
+- If you see "סה"כ כולל מע"מ" or "סה"כ לתשלום" followed by a number, THAT is the totalAmount
+- If currency symbol ₪ or the word "ש"ח" appears, currency is "ILS"
+
+General rules:
+- Extract ALL line items visible in the text
 - Dates in YYYY-MM-DD format
-- If a field is not visible or unclear, use null
-- Confidence score reflects how certain you are about the extraction accuracy
-- For Hebrew documents, keep vendor names in their original Hebrew
-- Look for patterns like totals, tax amounts, dates, and item listings
-- Common Hebrew receipt terms: סה"כ (total), מע"מ (VAT), חשבונית (invoice), קבלה (receipt)`
+- If a field is unclear, use null
+- For Hebrew documents, keep vendor names in Hebrew
+- Common Hebrew terms: סה"כ (total), מע"מ (VAT), חשבונית (invoice), קבלה (receipt), פריט (item)`
 
 async function ocrImage(filePath: string): Promise<string> {
   const worker = await createWorker(["eng", "heb"])
@@ -121,7 +120,7 @@ async function callMiniMax(ocrText: string): Promise<ExtractionResult> {
     body: JSON.stringify({
       model: MINIMAX_MODEL,
       max_tokens: 4096,
-      temperature: 0.1,
+      temperature: 0,
       messages: [
         {
           role: "system",
