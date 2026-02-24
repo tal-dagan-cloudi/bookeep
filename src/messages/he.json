@@ -1,0 +1,107 @@
+{
+  "common": {
+    "appName": "בוקיפ",
+    "loading": "טוען...",
+    "save": "שמור",
+    "cancel": "ביטול",
+    "delete": "מחק",
+    "edit": "ערוך",
+    "create": "צור",
+    "search": "חיפוש",
+    "filter": "סנן",
+    "export": "ייצוא",
+    "upload": "העלאה",
+    "back": "חזרה",
+    "next": "הבא",
+    "submit": "שלח"
+  },
+  "nav": {
+    "dashboard": "לוח בקרה",
+    "documents": "מסמכים",
+    "categories": "קטגוריות",
+    "integrations": "אינטגרציות",
+    "settings": "הגדרות",
+    "billing": "חיוב"
+  },
+  "auth": {
+    "signIn": "התחברות",
+    "signUp": "הרשמה",
+    "signOut": "התנתקות"
+  },
+  "landing": {
+    "hero": {
+      "title": "הפסיקו לרדוף אחרי חשבוניות",
+      "subtitle": "איסוף וניהול קבלות חכם עם בינה מלאכותית. חברו את המייל, צלמו תמונה או העבירו קבלות — בוקיפ מטפל בכל השאר.",
+      "cta": "התחילו בחינם",
+      "ctaSecondary": "ראו איך זה עובד"
+    },
+    "features": {
+      "title": "כל מה שאתם צריכים",
+      "emailScan": {
+        "title": "סריקת מייל אוטומטית",
+        "description": "חברו Gmail, Outlook או כל דוא\"ל. אנחנו מוצאים ומחלצים את הקבלות שלכם אוטומטית."
+      },
+      "aiExtraction": {
+        "title": "חילוץ נתונים עם AI",
+        "description": "ה-AI שלנו קורא כל קבלה ומחלץ ספק, סכום, תאריך, מע\"מ ואפילו פריטים."
+      },
+      "whatsapp": {
+        "title": "סורק WhatsApp",
+        "description": "צלמו קבלה ושלחו ב-WhatsApp. חילוץ מיידי."
+      },
+      "export": {
+        "title": "ייצוא לכל מקום",
+        "description": "שלחו ל-QuickBooks, חשבונית ירוקה, iCount, או הורידו כ-CSV, Excel או PDF."
+      }
+    },
+    "pricing": {
+      "title": "תמחור פשוט ושקוף",
+      "free": {
+        "name": "חינם",
+        "price": "₪0",
+        "period": "לתמיד",
+        "features": ["תיבת דוא\"ל אחת", "20 מסמכים בחודש", "ייצוא CSV", "חילוץ AI"]
+      },
+      "business": {
+        "name": "עסקי",
+        "price": "₪219",
+        "period": "לחודש",
+        "features": ["תיבות דוא\"ל ללא הגבלה", "מסמכים ללא הגבלה", "כל פורמטי הייצוא", "אינטגרציות חשבונאיות", "חוקי אוטומציה", "סורק WhatsApp", "גישת API"]
+      },
+      "accountant": {
+        "name": "רואה חשבון",
+        "price": "₪449",
+        "period": "לחודש",
+        "features": ["הכל בעסקי", "ניהול לקוחות ללא הגבלה", "לוח בקרה רב-ישויות", "תמיכה בעדיפות", "מיתוג מותאם אישית"]
+      }
+    }
+  },
+  "dashboard": {
+    "title": "לוח בקרה",
+    "recentDocuments": "מסמכים אחרונים",
+    "noDocuments": "אין מסמכים עדיין",
+    "uploadFirst": "העלו את הקבלה הראשונה שלכם או חברו דוא\"ל כדי להתחיל.",
+    "stats": {
+      "totalDocuments": "סה\"כ מסמכים",
+      "thisMonth": "החודש",
+      "pendingReview": "ממתינים לסקירה",
+      "connectedEmails": "תיבות מחוברות"
+    }
+  },
+  "documents": {
+    "title": "מסמכים",
+    "upload": "העלאת מסמכים",
+    "dragDrop": "גררו ושחררו קבצים כאן, או לחצו לעיון",
+    "supportedFormats": "תומך ב-PDF, JPG, PNG, HEIC",
+    "gallery": "גלריה",
+    "table": "טבלה",
+    "status": {
+      "pending": "ממתין",
+      "processing": "מעבד",
+      "ready": "מוכן",
+      "reviewed": "נבדק",
+      "exported": "יוצא",
+      "trash": "פח"
+    }
+  }
+}

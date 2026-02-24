@@ -1,0 +1,107 @@
+{
+  "common": {
+    "appName": "Bookeep",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "upload": "Upload",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "documents": "Documents",
+    "categories": "Categories",
+    "integrations": "Integrations",
+    "settings": "Settings",
+    "billing": "Billing"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out"
+  },
+  "landing": {
+    "hero": {
+      "title": "Stop Chasing Receipts",
+      "subtitle": "AI-powered receipt collection and management. Connect your email, snap a photo, or forward receipts — Bookeep handles the rest.",
+      "cta": "Start Free Trial",
+      "ctaSecondary": "See How It Works"
+    },
+    "features": {
+      "title": "Everything You Need",
+      "emailScan": {
+        "title": "Email Auto-Scan",
+        "description": "Connect Gmail, Outlook, or any email. We automatically find and extract your receipts."
+      },
+      "aiExtraction": {
+        "title": "AI Data Extraction",
+        "description": "Our AI reads every receipt and extracts vendor, amount, date, tax, and even line items."
+      },
+      "whatsapp": {
+        "title": "WhatsApp Scanner",
+        "description": "Snap a photo of any receipt and send it via WhatsApp. Instant extraction."
+      },
+      "export": {
+        "title": "Export Anywhere",
+        "description": "Send to QuickBooks, Xero, Morning, or download as CSV, Excel, or PDF."
+      }
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "free": {
+        "name": "Free",
+        "price": "$0",
+        "period": "forever",
+        "features": ["1 email inbox", "20 documents/month", "CSV export", "AI extraction"]
+      },
+      "business": {
+        "name": "Business",
+        "price": "$49",
+        "period": "per month",
+        "features": ["Unlimited email inboxes", "Unlimited documents", "All export formats", "Accounting integrations", "Automation rules", "WhatsApp scanner", "API access"]
+      },
+      "accountant": {
+        "name": "Accountant",
+        "price": "$99",
+        "period": "per month",
+        "features": ["Everything in Business", "Unlimited client management", "Multi-entity dashboard", "Priority support", "Custom branding"]
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "recentDocuments": "Recent Documents",
+    "noDocuments": "No documents yet",
+    "uploadFirst": "Upload your first receipt or connect an email to get started.",
+    "stats": {
+      "totalDocuments": "Total Documents",
+      "thisMonth": "This Month",
+      "pendingReview": "Pending Review",
+      "connectedEmails": "Connected Emails"
+    }
+  },
+  "documents": {
+    "title": "Documents",
+    "upload": "Upload Documents",
+    "dragDrop": "Drag and drop files here, or click to browse",
+    "supportedFormats": "Supports PDF, JPG, PNG, HEIC",
+    "gallery": "Gallery",
+    "table": "Table",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "ready": "Ready",
+      "reviewed": "Reviewed",
+      "exported": "Exported",
+      "trash": "Trash"
+    }
+  }
+}
