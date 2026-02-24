@@ -9,6 +9,7 @@ import {
   CreditCard,
 } from "lucide-react"
 
+import { LocaleSwitcher } from "@/components/locale-switcher"
 import { Link } from "@/i18n/navigation"
 
 export default function DashboardLayout({
@@ -49,7 +50,8 @@ export default function DashboardLayout({
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center justify-end border-b px-6">
+        <header className="flex h-16 items-center justify-end gap-4 border-b px-6">
+          <LocaleSwitcher />
           <UserButton />
         </header>
         <main className="flex-1">{children}</main>

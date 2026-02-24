@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl"
 import { FileText, Mail, MessageSquare, Upload } from "lucide-react"
 
+import { LocaleSwitcher } from "@/components/locale-switcher"
 import { Link } from "@/i18n/navigation"
 
 export default function LandingPage() {
@@ -15,6 +16,7 @@ export default function LandingPage() {
             <span className="text-xl font-bold">Bookeep</span>
           </div>
           <nav className="flex items-center gap-4">
+            <LocaleSwitcher />
             <Link
               href="/auth/sign-in"
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
