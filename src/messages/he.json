@@ -108,6 +108,24 @@
       "trash": "פח"
     }
   },
+  "categories": {
+    "title": "קטגוריות וישויות",
+    "expenseCategories": "קטגוריות הוצאות",
+    "addCategory": "הוסף קטגוריה",
+    "categoryName": "שם",
+    "categoryNamePlaceholder": "לדוגמה: ציוד משרדי",
+    "color": "צבע",
+    "save": "שמור",
+    "noCategories": "אין קטגוריות עדיין. צרו אחת כדי לארגן את המסמכים.",
+    "confirmDelete": "האם אתם בטוחים שברצונכם למחוק?",
+    "businessEntities": "ישויות עסקיות",
+    "addEntity": "הוסף ישות",
+    "entityName": "שם",
+    "entityNamePlaceholder": "לדוגמה: החברה שלי בע\"מ",
+    "setAsDefault": "ברירת מחדל",
+    "default": "ברירת מחדל",
+    "noEntities": "אין ישויות עסקיות עדיין. צרו אחת כדי לשייך מסמכים."
+  },
   "integrations": {
     "title": "אינטגרציות",
     "emailAccounts": "חשבונות דוא\"ל",

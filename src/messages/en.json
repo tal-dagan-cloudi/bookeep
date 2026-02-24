@@ -108,6 +108,24 @@
       "trash": "Trash"
     }
   },
+  "categories": {
+    "title": "Categories & Entities",
+    "expenseCategories": "Expense Categories",
+    "addCategory": "Add Category",
+    "categoryName": "Name",
+    "categoryNamePlaceholder": "e.g., Office Supplies",
+    "color": "Color",
+    "save": "Save",
+    "noCategories": "No categories yet. Create one to organize your documents.",
+    "confirmDelete": "Are you sure you want to delete this?",
+    "businessEntities": "Business Entities",
+    "addEntity": "Add Entity",
+    "entityName": "Name",
+    "entityNamePlaceholder": "e.g., My Company Ltd.",
+    "setAsDefault": "Default",
+    "default": "Default",
+    "noEntities": "No business entities yet. Create one to assign documents."
+  },
   "integrations": {
     "title": "Integrations",
     "emailAccounts": "Email Accounts",
