@@ -150,13 +150,21 @@ async function callMiniMax(ocrText: string): Promise<ExtractionResult> {
     throw new Error("No content in MiniMax response")
   }
 
+  // Strip <think>...</think> tags (MiniMax chain-of-thought)
   // Strip markdown code fences if present
   const jsonStr = content
+    .replace(/<think>[\s\S]*?<\/think>/g, "")
     .replace(/^```json?\s*/i, "")
     .replace(/```\s*$/, "")
     .trim()
 
-  const parsed = JSON.parse(jsonStr) as Omit<ExtractionResult, "rawOcrText">
+  // Extract JSON object from response if surrounded by other text
+  const jsonMatch = jsonStr.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) {
+    throw new Error("No JSON object found in MiniMax response")
+  }
+
+  const parsed = JSON.parse(jsonMatch[0]) as Omit<ExtractionResult, "rawOcrText">
 
   return {
     ...parsed,
