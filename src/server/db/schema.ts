@@ -110,6 +110,8 @@ export const organizations = pgTable("organizations", {
   plan: varchar("plan", { length: 50 }).default("free").notNull(),
   billingCycle: varchar("billing_cycle", { length: 20 }).default("monthly"),
   bluesnapCustomerId: varchar("bluesnap_customer_id", { length: 255 }),
+  whatsappNumber: varchar("whatsapp_number", { length: 20 }).unique(),
+  forwardingEmail: varchar("forwarding_email", { length: 255 }).unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })

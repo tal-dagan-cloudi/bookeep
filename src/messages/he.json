@@ -126,6 +126,15 @@
     "default": "ברירת מחדל",
     "noEntities": "אין ישויות עסקיות עדיין. צרו אחת כדי לשייך מסמכים."
   },
+  "settings": {
+    "title": "הגדרות",
+    "accountingIntegrations": "אינטגרציות חשבונאיות",
+    "accountingDescription": "חברו את תוכנת הנהלת החשבונות שלכם לייצוא מסמכים ישיר.",
+    "comingSoon": "בקרוב",
+    "connected": "מחובר",
+    "connect": "חבר",
+    "saveCredentials": "שמור פרטי התחברות"
+  },
   "integrations": {
     "title": "אינטגרציות",
     "emailAccounts": "חשבונות דוא\"ל",

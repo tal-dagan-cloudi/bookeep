@@ -126,6 +126,15 @@
     "default": "Default",
     "noEntities": "No business entities yet. Create one to assign documents."
   },
+  "settings": {
+    "title": "Settings",
+    "accountingIntegrations": "Accounting Integrations",
+    "accountingDescription": "Connect your accounting software to export documents directly.",
+    "comingSoon": "Coming Soon",
+    "connected": "Connected",
+    "connect": "Connect",
+    "saveCredentials": "Save Credentials"
+  },
   "integrations": {
     "title": "Integrations",
     "emailAccounts": "Email Accounts",
