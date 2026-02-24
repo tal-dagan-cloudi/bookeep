@@ -1,8 +1,11 @@
-import Anthropic from "@anthropic-ai/sdk"
+import { createWorker } from "tesseract.js"
 import { readFile } from "fs/promises"
 import path from "path"
 
 const STORAGE_DIR = path.join(process.cwd(), "storage")
+
+const MINIMAX_BASE_URL = "https://api.minimax.io/v1"
+const MINIMAX_MODEL = "MiniMax-M2.5"
 
 type LineItem = {
   description: string
@@ -32,7 +35,7 @@ export type ExtractionResult = {
   confidenceScore: number
 }
 
-const EXTRACTION_PROMPT = `You are an expert document data extractor. Analyze this receipt/invoice image and extract the following structured data.
+const EXTRACTION_PROMPT = `You are an expert document data extractor. Analyze the following OCR text extracted from a receipt or invoice and extract structured data.
 
 Return ONLY valid JSON with this exact structure (no markdown, no explanation):
 {
@@ -53,81 +56,135 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
       "tax": number
     }
   ],
-  "rawOcrText": "full text content of the document",
   "confidenceScore": 0.0 to 1.0
 }
 
 Rules:
-- Extract ALL line items if visible
+- Extract ALL line items if visible in the text
 - Use ISO currency codes
 - Dates in YYYY-MM-DD format
-- If a field is not visible, use null
+- If a field is not visible or unclear, use null
 - Confidence score reflects how certain you are about the extraction accuracy
-- For Hebrew documents, translate vendor names to their original Hebrew
-- Always include rawOcrText with the full text content`
+- For Hebrew documents, keep vendor names in their original Hebrew
+- Look for patterns like totals, tax amounts, dates, and item listings
+- Common Hebrew receipt terms: סה"כ (total), מע"מ (VAT), חשבונית (invoice), קבלה (receipt)`
+
+async function ocrImage(filePath: string): Promise<string> {
+  const worker = await createWorker(["eng", "heb"])
+  const result = await worker.recognize(filePath)
+  const text = result.data.text
+  await worker.terminate()
+  return text
+}
+
+async function extractTextFromPdf(filePath: string): Promise<string> {
+  const { PDFParse } = await import("pdf-parse")
+  const buffer = await readFile(filePath)
+  const parser = new PDFParse({ data: buffer })
+  const textResult = await parser.getText()
+  await parser.destroy()
+  return textResult.text
+}
+
+async function extractTextFromFile(
+  fileRelativePath: string,
+  fileType: string
+): Promise<string> {
+  const fullPath = path.join(STORAGE_DIR, fileRelativePath)
+
+  if (fileType === "pdf") {
+    const text = await extractTextFromPdf(fullPath)
+    // If PDF has very little text, it might be a scanned PDF — try OCR
+    if (text.trim().length < 20) {
+      return ocrImage(fullPath)
+    }
+    return text
+  }
+
+  // Image files — use OCR
+  return ocrImage(fullPath)
+}
+
+async function callMiniMax(ocrText: string): Promise<ExtractionResult> {
+  const apiKey = process.env.MINIMAX_API_KEY
+
+  if (!apiKey) {
+    throw new Error("MINIMAX_API_KEY not configured")
+  }
+
+  const response = await fetch(`${MINIMAX_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: MINIMAX_MODEL,
+      max_tokens: 4096,
+      temperature: 0.1,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a precise document data extractor. You only output valid JSON, nothing else.",
+        },
+        {
+          role: "user",
+          content: `${EXTRACTION_PROMPT}\n\n--- OCR TEXT START ---\n${ocrText}\n--- OCR TEXT END ---`,
+        },
+      ],
+    }),
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.text()
+    throw new Error(
+      `MiniMax API error (${response.status}): ${errorBody}`
+    )
+  }
+
+  const data = await response.json()
+  const content = data.choices?.[0]?.message?.content
+
+  if (!content) {
+    throw new Error("No content in MiniMax response")
+  }
+
+  // Strip markdown code fences if present
+  const jsonStr = content
+    .replace(/^```json?\s*/i, "")
+    .replace(/```\s*$/, "")
+    .trim()
+
+  const parsed = JSON.parse(jsonStr) as Omit<ExtractionResult, "rawOcrText">
+
+  return {
+    ...parsed,
+    rawOcrText: ocrText,
+  }
+}
 
 export async function extractDocument(
   fileRelativePath: string,
   fileType: string
 ): Promise<ExtractionResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const ocrText = await extractTextFromFile(fileRelativePath, fileType)
 
-  if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY not configured")
+  if (ocrText.trim().length === 0) {
+    return {
+      vendorName: null,
+      vendorAddress: null,
+      documentDate: null,
+      documentType: "other",
+      documentNumber: null,
+      totalAmount: null,
+      totalTax: null,
+      currency: "USD",
+      lineItems: [],
+      rawOcrText: "",
+      confidenceScore: 0,
+    }
   }
 
-  const client = new Anthropic({ apiKey })
-  const fullPath = path.join(STORAGE_DIR, fileRelativePath)
-  const fileBuffer = await readFile(fullPath)
-  const base64 = fileBuffer.toString("base64")
-
-  const mediaType = getMediaType(fileType)
-
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 4096,
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: mediaType,
-              data: base64,
-            },
-          },
-          {
-            type: "text",
-            text: EXTRACTION_PROMPT,
-          },
-        ],
-      },
-    ],
-  })
-
-  const textContent = response.content.find((c) => c.type === "text")
-  if (!textContent || textContent.type !== "text") {
-    throw new Error("No text response from Claude")
-  }
-
-  const parsed = JSON.parse(textContent.text) as ExtractionResult
-  return parsed
-}
-
-function getMediaType(
-  fileType: string
-): "image/jpeg" | "image/png" | "image/webp" | "image/gif" {
-  const typeMap: Record<
-    string,
-    "image/jpeg" | "image/png" | "image/webp" | "image/gif"
-  > = {
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    png: "image/png",
-    webp: "image/webp",
-    gif: "image/gif",
-  }
-  return typeMap[fileType] || "image/jpeg"
+  return callMiniMax(ocrText)
 }
